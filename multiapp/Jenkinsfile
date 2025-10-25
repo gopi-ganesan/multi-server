@@ -1,0 +1,64 @@
+pipeline {
+    agent any 
+
+    environment {
+        DOCKER_USER = 'flask-im'
+        DOCKERHUB_CREDENTIALS = credentials ('dockerhub-cred')
+    }
+
+    stages {
+        stage('git clone') {
+            steps {
+                git(
+                    url: '',
+                    branch: 'main',
+                    credentialsId: 'github-token'
+                )
+            }
+        }
+
+        stage('Build docker images') {
+            steps {
+                sh "docker compose build"
+            }
+        }
+
+        stage('push images to dockerhub') {
+            steps {
+                script {
+                    sh'''
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKER_USER --password-stdin
+                    docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1
+                    docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1
+                    docker push $DOCKER_USER/multiapp_api:v1
+                    docker push $DOCKER_USER/multiapp_frontend:v1
+                    '''
+                }
+            }
+        }
+
+        stage('deploy with docker compose') {
+            steps {
+                sh "docker compose down || true"
+                sh "docker compose up -d"
+            }
+        }
+
+        stage('test services') {
+            staps {
+                sh "curl http://localhost:5000/api"
+                sh "curl http://localhost:3000/"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployed successfully!'
+        }
+
+        failure {
+            echo 'Deployment failed!'
+        }
+    }
+}
