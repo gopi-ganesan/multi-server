@@ -10,7 +10,7 @@ pipeline {
         stage('git clone') {
             steps {
                 git(
-                    url: '',
+                    url: 'https://github.com/gopi-ganesan/multi-server.git',
                     branch: 'main',
                     credentialsId: 'github-token'
                 )
