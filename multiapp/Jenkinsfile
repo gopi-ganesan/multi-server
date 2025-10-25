@@ -26,13 +26,11 @@ pipeline {
         stage('push images to dockerhub') {
             steps {
                 script {
-                    sh '''
-                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                    docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1
-                    docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1
-                    docker push $DOCKER_USER/multiapp_api:v1
-                    docker push $DOCKER_USER/multiapp_frontend:v1
-                    '''
+                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                    sh'docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1'
+                    sh'docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1'
+                    sh'docker push $DOCKER_USER/multiapp_api:v1'
+                    sh'docker push $DOCKER_USER/multiapp_frontend:v1'
                 }
             }
         }
