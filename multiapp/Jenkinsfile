@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_USER = 'flask-im'
-        DOCKERHUB_CREDENTIALS = credentials ('dockerhub-cred')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
     }
 
     stages {
@@ -26,8 +26,8 @@ pipeline {
         stage('push images to dockerhub') {
             steps {
                 script {
-                    sh'''
-                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKER_USER --password-stdin
+                    sh '''
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
                     docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1
                     docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1
                     docker push $DOCKER_USER/multiapp_api:v1
@@ -39,13 +39,13 @@ pipeline {
 
         stage('deploy with docker compose') {
             steps {
-                sh "docker compose down || true"
-                sh "docker compose up -d"
+                sh "docker compose down --remove-orphans || true"
+                sh "docker compose up -d --build"
             }
         }
 
         stage('test services') {
-            staps {
+            steps {
                 sh "curl http://localhost:5000/api"
                 sh "curl http://localhost:3000/"
             }
