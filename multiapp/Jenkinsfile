@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('git clone') {
             steps {
-                echo 'cloning repository...'
+                echo 'Cloning repository...'
                 git(
                     url: 'https://github.com/gopi-ganesan/multi-server.git',
                     branch: 'main',
@@ -20,45 +20,55 @@ pipeline {
 
         stage('Build docker images') {
             steps {
-                sh "docker-compose -f docker-compose-build.yml build"
-            }
-        }
-
-        stage('push images to dockerhub') {
-            steps {
-                echo 'pushing images to dockerhub...'
-                script {
-                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-                    sh'docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1'
-                    sh'docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1'
-                    sh'docker push $DOCKER_USER/multiapp_api:v1'
-                    sh'docker push $DOCKER_USER/multiapp_frontend:v1'
+                echo 'Building docker images...'
+                dir('multiapp') {
+                    sh 'docker-compose -f docker-compose.yml build'
                 }
             }
         }
 
-        stage('deploy with docker compose') {
+        stage('Push images to DockerHub') {
             steps {
-                sh 'docker-compose -f docker-compose.yml down || true'
-                sh 'docker-compose -f docker-compose.yml up -d'
+                echo 'Pushing images to DockerHub...'
+                dir('multiapp') {
+                    script {
+                        sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                        sh 'docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1'
+                        sh 'docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1'
+                        sh 'docker push $DOCKER_USER/multiapp_api:v1'
+                        sh 'docker push $DOCKER_USER/multiapp_frontend:v1'
+                    }
+                }
             }
         }
 
-        stage('test services') {
+        stage('Deploy with Docker Compose') {
             steps {
-                sh "curl http://localhost:5000/api"
-                sh "curl http://localhost:3000/"
+                echo 'Deploying the application...'
+                dir('multiapp') {
+                    sh 'docker-compose -f docker-compose.yml down || true'
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                }
+            }
+        }
+
+        stage('Test Services') {
+            steps {
+                echo 'Testing API and frontend...'
+                sh 'curl http://localhost:5000/api'
+                sh 'curl http://localhost:3000/'
             }
         }
     }
 
     post {
         success {
-            echo 'Deployed successfully!'
+            echo ' Deployed successfully!'
         }
 
         failure {
-            echo 'Deployment failed!'
+            echo ' Deployment failed!'
         }
     }
 }
+
