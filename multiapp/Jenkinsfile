@@ -9,6 +9,7 @@ pipeline {
     stages {
         stage('git clone') {
             steps {
+                echo 'cloning repository...'
                 git(
                     url: 'https://github.com/gopi-ganesan/multi-server.git',
                     branch: 'main',
@@ -25,6 +26,7 @@ pipeline {
 
         stage('push images to dockerhub') {
             steps {
+                echo 'pushing images to dockerhub...'
                 script {
                     sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
                     sh'docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1'
