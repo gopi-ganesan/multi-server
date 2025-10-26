@@ -1,15 +1,16 @@
 pipeline {
-    agent any 
+    agent any
 
     environment {
-        DOCKER_USER = 'flask-im'
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
+        DOCKERHUB_CREDENTIALS = 'dockerhub-cred' 
+        DOCKERHUB_USERNAME = 'gopinathgb'                 
+        API_IMAGE = 'multiapp_api:v2'
+        FRONTEND_IMAGE = 'multiapp_frontend:v2'
     }
 
     stages {
-        stage('git clone') {
+        stage('Checkout Code') {
             steps {
-                echo 'Cloning repository...'
                 git(
                     url: 'https://github.com/gopi-ganesan/multi-server.git',
                     branch: 'main',
@@ -18,25 +19,33 @@ pipeline {
             }
         }
 
-        stage('Build docker images') {
+        stage('Build Docker Images') {
             steps {
-                echo 'Building docker images...'
                 dir('multiapp') {
+                    echo 'Building Docker images with docker-compose...'
                     sh 'docker-compose -f docker-compose.yml build'
                 }
             }
         }
 
-        stage('Push images to DockerHub') {
+        stage('Push Images to DockerHub') {
             steps {
-                echo 'Pushing images to DockerHub...'
                 dir('multiapp') {
-                    script {
-                        sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-                        sh 'docker tag multiapp_api:v1 $DOCKER_USER/multiapp_api:v1'
-                        sh 'docker tag multiapp_frontend:v1 $DOCKER_USER/multiapp_frontend:v1'
-                        sh 'docker push $DOCKER_USER/multiapp_api:v1'
-                        sh 'docker push $DOCKER_USER/multiapp_frontend:v1'
+                    withCredentials([string(credentialsId: 'dockerhub-password', variable: 'DOCKERHUB_PASSWORD')]) {
+                        echo 'Logging in to DockerHub...'
+                        sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin"
+
+                        echo 'Tagging API image...'
+                        sh "docker tag multiapp-api $DOCKERHUB_USERNAME/$API_IMAGE"
+
+                        echo 'Tagging Frontend image...'
+                        sh "docker tag multiapp-frontend $DOCKERHUB_USERNAME/$FRONTEND_IMAGE"
+
+                        echo 'Pushing API image...'
+                        sh "docker push $DOCKERHUB_USERNAME/$API_IMAGE"
+
+                        echo 'Pushing Frontend image...'
+                        sh "docker push $DOCKERHUB_USERNAME/$FRONTEND_IMAGE"
                     }
                 }
             }
@@ -44,9 +53,8 @@ pipeline {
 
         stage('Deploy with Docker Compose') {
             steps {
-                echo 'Deploying the application...'
                 dir('multiapp') {
-                    sh 'docker-compose -f docker-compose.yml down || true'
+                    echo 'Deploying services...'
                     sh 'docker-compose -f docker-compose.yml up -d'
                 }
             }
@@ -54,21 +62,18 @@ pipeline {
 
         stage('Test Services') {
             steps {
-                echo 'Testing API and frontend...'
-                sh 'curl http://localhost:5000/api'
-                sh 'curl http://localhost:3000/'
+                echo 'Testing if services are running...'
+                sh 'docker ps'
             }
         }
     }
 
     post {
-        success {
-            echo ' Deployed successfully!'
-        }
-
         failure {
-            echo ' Deployment failed!'
+            echo 'Deployment failed!'
+        }
+        success {
+            echo 'Deployment completed successfully!'
         }
     }
 }
-

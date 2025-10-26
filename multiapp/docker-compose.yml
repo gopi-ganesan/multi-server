@@ -1,17 +1,18 @@
 version: '3.9'
 
 services:
-  api :
+  api:
     build: ./api
+    image: gopinathgb/multiapp_api:v2   # Added image name with tag
     container_name: api
     ports:
-    - "5000:5000"
+      - "5000:5000"
 
   frontend:
     build: ./frontend
+    image: gopinathgb/multiapp_frontend:v2  # Added image name with tag
     container_name: frontend
     ports:
-    - "3000:3000"
+      - "3000:3000"
     depends_on:
-    - api
-
+      - api
