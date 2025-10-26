@@ -19,7 +19,7 @@ pipeline {
 
         stage('Build docker images') {
             steps {
-                sh "docker compose build"
+                sh "docker-compose build"
             }
         }
 
@@ -37,8 +37,8 @@ pipeline {
 
         stage('deploy with docker compose') {
             steps {
-                sh "docker compose down --remove-orphans || true"
-                sh "docker compose up -d --build"
+                sh "docker-compose down --remove-orphans || true"
+                sh "docker-compose up -d --build"
             }
         }
 
