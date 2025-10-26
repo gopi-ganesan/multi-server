@@ -31,9 +31,8 @@ pipeline {
         stage('Push Images to DockerHub') {
             steps {
                 dir('multiapp') {
-                    withCredentials([string(credentialsId: 'dockerhub-password', variable: 'DOCKERHUB_PASSWORD')]) {
                         echo 'Logging in to DockerHub...'
-                        sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin"
+                        echo '${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin'
 
                         echo 'Tagging API image...'
                         sh "docker tag multiapp-api $DOCKERHUB_USERNAME/$API_IMAGE"
@@ -46,7 +45,6 @@ pipeline {
 
                         echo 'Pushing Frontend image...'
                         sh "docker push $DOCKERHUB_USERNAME/$FRONTEND_IMAGE"
-                    }
                 }
             }
         }
